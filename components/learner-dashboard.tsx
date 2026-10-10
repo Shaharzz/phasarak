@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { createClient } from "@/lib/supabase/browser";
 import { ThemeToggle } from "@/components/theme-toggle";
 import CountUp from "@/components/CountUp";
 import SpotlightCard from "@/components/SpotlightCard";
+import BlurText from "@/components/BlurText";
 
 type LearnerId = "shahar" | "athittaya";
 type Word = {
@@ -29,6 +31,7 @@ export function LearnerDashboard() {
   const [category, setCategory] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     const saved = window.localStorage.getItem("phasarak-learner");
@@ -75,6 +78,27 @@ export function LearnerDashboard() {
     };
   }, [learner]);
 
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`progress-${learner}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "progress" },
+        () => {
+          window.dispatchEvent(new CustomEvent("phasarak-progress-changed"));
+        },
+      )
+      .subscribe();
+
+    const refresh = () => window.location.reload();
+    window.addEventListener("phasarak-progress-changed", refresh);
+    return () => {
+      window.removeEventListener("phasarak-progress-changed", refresh);
+      void supabase.removeChannel(channel);
+    };
+  }, [learner]);
+
   const todayWords = useMemo(
     () => words.filter((word) => !learned.has(word.id)).slice(0, 2),
     [words, learned],
@@ -102,6 +126,8 @@ export function LearnerDashboard() {
       return;
     }
     setLearned((current) => new Set(current).add(word.id));
+    setNotice(`${word.en} learned · เรียนคำนี้แล้ว`);
+    window.setTimeout(() => setNotice(""), 2200);
   }
 
   const details = learnerDetails[learner];
@@ -149,9 +175,13 @@ export function LearnerDashboard() {
 
       <section className="flex-1 py-12 motion-safe:animate-[fade-in-up_.55s_ease-out] sm:py-16">
         <p className="font-thai text-sm text-[#ad737d]">{details.thai} · {details.target}</p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-[-0.055em] sm:text-6xl">
-          {view === "today" ? "A little more, today." : view === "together" ? "Learning together." : "Your word garden."}
-        </h1>
+        <BlurText
+          key={`${learner}-${view}`}
+          text={view === "today" ? "A little more, today." : view === "together" ? "Learning together." : "Your word garden."}
+          animateBy="words"
+          className="mt-3 text-4xl font-semibold tracking-[-0.055em] sm:text-6xl"
+          delay={70}
+        />
         <div className="mt-8 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-3">
           <Stat label="Learned · เรียนแล้ว" value={learned.size} />
           <Stat label="To go · เหลืออีก" value={Math.max(words.length - learned.size, 0)} />
@@ -159,7 +189,14 @@ export function LearnerDashboard() {
         </div>
         {error && <p className="mt-5 rounded-2xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-300">{error}</p>}
         {loading ? <p className="mt-10 text-sm text-[#a17a82]">Loading words · กำลังโหลดคำศัพท์...</p> : (
-          <>
+          <AnimatePresence mode="wait">
+          <motion.div
+            key={view}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.24, ease: "easeOut" }}
+          >
             {view === "today" && (
               <>
                 <p className="mt-5 max-w-md text-sm leading-7 text-[#87656d] dark:text-[#d0afb5]">Two new words for {details.name}. Mark them learned as you practice together.</p>
@@ -185,14 +222,40 @@ export function LearnerDashboard() {
               </>
             )}
             {view === "together" && <TogetherView words={words} learner={learner} partnerLearned={partnerLearned} />}
-          </>
+          </motion.div>
+          </AnimatePresence>
         )}
       </section>
+      {notice && (
+        <motion.div
+          initial={{ opacity: 0, y: 16, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          className="fixed bottom-24 left-1/2 z-20 -translate-x-1/2 rounded-full bg-[#321c26] px-4 py-2 text-xs font-medium text-white shadow-xl sm:bottom-8"
+          role="status"
+        >
+          {notice}
+        </motion.div>
+      )}
+      <nav className="fixed inset-x-4 bottom-4 z-10 flex justify-around rounded-2xl border border-white/80 bg-white/85 p-2 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-[#24151d]/90 sm:hidden">
+        <MobileNavButton active={view === "today"} onClick={() => setView("today")} label="Today" icon="✦" />
+        <MobileNavButton active={view === "together"} onClick={() => setView("together")} label="Together" icon="♡" />
+        <a href="/words" className="flex min-w-16 flex-col items-center gap-1 rounded-xl px-3 py-2 text-[10px] text-[#8d6870]">
+          <span className="text-base">⌕</span>Words
+        </a>
+      </nav>
       <footer className="flex items-center justify-between border-t border-[#eededb]/80 pt-5 text-[11px] text-[#b08d93]">
         <span>{learned.size} words learned · เรียนแล้ว {learned.size} คำ</span>
         <span className="font-thai">รัก · rak · love</span>
       </footer>
     </div>
+  );
+}
+
+function MobileNavButton({ active, onClick, label, icon }: { active: boolean; onClick: () => void; label: string; icon: string }) {
+  return (
+    <button type="button" onClick={onClick} className={`flex min-w-16 flex-col items-center gap-1 rounded-xl px-3 py-2 text-[10px] ${active ? "bg-[#e86673]/10 text-[#c44f5d]" : "text-[#8d6870]"}`}>
+      <span className="text-base">{icon}</span>{label}
+    </button>
   );
 }
 
