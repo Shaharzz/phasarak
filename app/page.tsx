@@ -1,11 +1,11 @@
 import { AuroraBackground } from "@/components/aurora-background";
-import { AnonymousSession } from "@/components/anonymous-session";
+import { LearnerGate } from "@/components/learner-gate";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { copy } from "@/lib/i18n";
 
 export default function Home() {
   return (
-    <AnonymousSession>
+    <LearnerGate>
       <main className="relative min-h-screen overflow-hidden bg-[#fffaf7] text-[#321c26] dark:bg-[#1b1118] dark:text-[#fff5f0]">
         <AuroraBackground />
         <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 pb-8 pt-6 sm:px-8">
@@ -67,6 +67,6 @@ export default function Home() {
         </footer>
         </div>
       </main>
-    </AnonymousSession>
+    </LearnerGate>
   );
 }
