@@ -1,8 +1,19 @@
 import { AuroraBackground } from "@/components/aurora-background";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { copy } from "@/lib/i18n";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#fffaf7] text-[#321c26] dark:bg-[#1b1118] dark:text-[#fff5f0]">
       <AuroraBackground />
