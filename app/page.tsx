@@ -1,23 +1,14 @@
 import { AuroraBackground } from "@/components/aurora-background";
+import { AnonymousSession } from "@/components/anonymous-session";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { copy } from "@/lib/i18n";
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 
-export default async function Home() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
+export default function Home() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#fffaf7] text-[#321c26] dark:bg-[#1b1118] dark:text-[#fff5f0]">
-      <AuroraBackground />
-      <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 pb-8 pt-6 sm:px-8">
+    <AnonymousSession>
+      <main className="relative min-h-screen overflow-hidden bg-[#fffaf7] text-[#321c26] dark:bg-[#1b1118] dark:text-[#fff5f0]">
+        <AuroraBackground />
+        <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 pb-8 pt-6 sm:px-8">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="grid size-10 place-items-center rounded-2xl bg-[#e86673] text-xl text-white shadow-lg shadow-[#e86673]/25">
@@ -74,7 +65,8 @@ export default async function Home() {
           <span>Made with patience &amp; curiosity</span>
           <span className="font-thai">รัก · rak · love</span>
         </footer>
-      </div>
-    </main>
+        </div>
+      </main>
+    </AnonymousSession>
   );
 }
