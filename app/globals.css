@@ -49,6 +49,11 @@ body {
 }
 .font-thai { font-family: var(--font-thai), sans-serif; }
 
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes aurora-drift {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
   50% { transform: translate3d(3%, 2%, 0) scale(1.08); }
