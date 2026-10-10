@@ -137,9 +137,13 @@ export function LearnerDashboard() {
           ["together", "Together · ด้วยกัน"],
           ["words", "Words · คำศัพท์"],
         ] as const).map(([key, label]) => (
-          <button key={key} type="button" onClick={() => setView(key)} className={view === key ? "border-b-2 border-[#e86673] pb-2 text-[#6e3c49] dark:text-[#ffd6d4]" : "pb-2"}>
-            {label}
-          </button>
+          key === "words" ? (
+            <a key={key} href="/words" className="pb-2">{label}</a>
+          ) : (
+            <button key={key} type="button" onClick={() => setView(key)} className={view === key ? "border-b-2 border-[#e86673] pb-2 text-[#6e3c49] dark:text-[#ffd6d4]" : "pb-2"}>
+              {label}
+            </button>
+          )
         ))}
       </nav>
 
