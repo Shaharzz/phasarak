@@ -26,6 +26,7 @@ export function LearnerDashboard() {
   const [learned, setLearned] = useState<Set<number>>(new Set());
   const [partnerLearned, setPartnerLearned] = useState<Set<number>>(new Set());
   const [view, setView] = useState<"today" | "together" | "words">("today");
+  const [category, setCategory] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -105,6 +106,10 @@ export function LearnerDashboard() {
 
   const details = learnerDetails[learner];
   const learnedWords = words.filter((word) => learned.has(word.id));
+  const categories = ["all", ...Array.from(new Set(words.map((word) => word.category).filter(Boolean) as string[]))];
+  const filteredLearnedWords = category === "all"
+    ? learnedWords
+    : learnedWords.filter((word) => word.category === category);
 
   return (
     <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 pb-8 pt-6 sm:px-8">
@@ -161,10 +166,19 @@ export function LearnerDashboard() {
               </>
             )}
             {view === "words" && (
-              <div className="mt-8 grid max-w-3xl gap-3 sm:grid-cols-2">
-                {learnedWords.map((word) => <WordCard key={word.id} word={word} learned />)}
-                {!learnedWords.length && <p className="text-sm text-[#a17a82]">No learned words yet · ยังไม่มีคำที่เรียน</p>}
-              </div>
+              <>
+                <div className="mt-8 flex max-w-4xl gap-2 overflow-x-auto pb-2">
+                  {categories.map((item) => (
+                    <button key={item} type="button" onClick={() => setCategory(item)} className={`shrink-0 rounded-full px-3 py-2 text-xs capitalize transition ${category === item ? "bg-[#e86673] text-white" : "bg-white/70 text-[#8d6870] dark:bg-white/10 dark:text-[#e9cbd0]"}`}>
+                      {item === "all" ? "All · ทั้งหมด" : item}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid max-w-3xl gap-3 sm:grid-cols-2">
+                  {filteredLearnedWords.map((word) => <WordCard key={word.id} word={word} learned />)}
+                  {!filteredLearnedWords.length && <p className="text-sm text-[#a17a82]">No words in this category · ยังไม่มีคำในหมวดนี้</p>}
+                </div>
+              </>
             )}
             {view === "together" && <TogetherView words={words} learner={learner} partnerLearned={partnerLearned} />}
           </>
