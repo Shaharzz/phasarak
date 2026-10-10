@@ -2,12 +2,23 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  const isPublicRoute =
+    request.nextUrl.pathname === "/login" ||
+    request.nextUrl.pathname.startsWith("/auth/");
+
+  if (isPublicRoute) {
+    return NextResponse.next();
+  }
+
   let response = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
-    return response;
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.search = "";
+    return NextResponse.redirect(loginUrl);
   }
 
   const supabase = createServerClient(url, key, {
@@ -31,19 +42,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isPublicRoute =
-    request.nextUrl.pathname === "/login" ||
-    request.nextUrl.pathname.startsWith("/auth/");
-
-  if (!user && !isPublicRoute) {
+  if (!user) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.search = "";
     return NextResponse.redirect(loginUrl);
-  }
-
-  if (user && request.nextUrl.pathname === "/login") {
-    return NextResponse.redirect(new URL("/", request.url));
   }
 
   return response;
